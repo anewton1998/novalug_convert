@@ -1,0 +1,18 @@
+name: novalug_web_convert
+version: 0.1.0
+
+authors:
+  - andy newton <andy@hxr.us>
+
+description: |
+  Converts HTML from the old NoVaLUG website into Zola content
+
+# development_dependencies:
+#   webmock:
+#     github: manastech/webmock.cr
+
+license: MIT
+
+dependencies:
+  lexbor: 
+    github: kostya/lexbor
