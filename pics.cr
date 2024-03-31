@@ -7,11 +7,11 @@ def grab_file(dest : String, url : String) : String
   dest = Path[dest]
   if url.starts_with?("./pics")
     download_file(dest, url)
-    url = url.gsub("./pics", "@/pics")
+    url = url.gsub("./pics", "/pics")
     return url
   elsif url.starts_with?("https://novalug.org/pics")
     download_file(dest, url)
-    url = url.gsub("https://novalug.org/pics", "@/pics")
+    url = url.gsub("https://novalug.org/pics", "/pics")
     return url
   end
   url

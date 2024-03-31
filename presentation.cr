@@ -38,7 +38,7 @@ class Presentation
   end
 
   def title=(html : Lexbor::Node)
-    @title = html.inner_text.gsub("\n", " ")
+    @title = html.inner_text.gsub("\n", " ").gsub(%("), %(\\"))
   end
 
   def title
@@ -110,7 +110,7 @@ def to_md_list(node : Lexbor::Node) : Array(String)
       list.concat(child_text)
     elsif child.is_tag_a?
       presenter = child.inner_text
-      link = child["href"].gsub("./pics", "@/pics")
+      link = child["href"].gsub("./pics", "/pics")
       list << "[#{presenter}](#{link})"
     end
   end
@@ -173,16 +173,14 @@ def parse_html_table(url)
   end
 end
 
-def write_presentations(dest : String, presentations : Array(Presentation))
+def write_presentations(dest : String, materials_dest : String, presentations : Array(Presentation))
   puts "Writing to #{dest}."
   raise "Not a directory" if !File.info(dest).directory?
   presentations.each do |preso|
     safe_title = preso.title.gsub(/[^\w*]/, '_')
     file_base = "#{safe_title}--#{preso.date}"
     puts "file base #{file_base}"
-    directory = Path[dest, file_base]
-    FileUtils.mkdir(directory)
-    md_file = File.open(Path[directory, "#{file_base}.md"], "w")
+    md_file = File.open(Path[dest, "#{file_base}.md"], "w")
     md_file.puts "+++"
     md_file.puts "# this is an auto-converted file"
     md_file.puts %(title = "#{preso.title}")
@@ -198,7 +196,9 @@ def write_presentations(dest : String, presentations : Array(Presentation))
       md_file.puts
     end
     if !preso.materials.empty?
-      materials = grab_materials(directory, file_base, preso.materials)
+      mat_dir = Path[materials_dest, file_base]
+      FileUtils.mkdir_p(mat_dir)
+      materials = grab_materials(mat_dir, file_base, preso.materials)
       md_file.puts "Materials:"
       materials.each do |link|
         md_file.puts "* #{link}"
@@ -219,11 +219,11 @@ def grab_materials(dest : Path, file_base : String, materials : Array(String)) :
       text = link[:text].not_nil!
       if url.starts_with?("./docs")
         download_file(dest, url)
-        url = url.gsub("./docs", "@/presentations/#{file_base}")
+        url = url.gsub("./docs", "/presentation_materials/#{file_base}")
         new_links << "[#{text}](#{url})"
       elsif url.starts_with?("https://novalug.org/docs")
         download_file(dest, url)
-        url = url.gsub("https://novalug.org/docs", "@/presentations/#{file_base}")
+        url = url.gsub("https://novalug.org/docs", "/presentation_materials/#{file_base}")
         new_links << "[#{text}](#{url})"
       else
         new_links << m
@@ -257,11 +257,15 @@ def download_file(dest : Path, url : String)
 end
 
 destination : String? = nil
+materials : String? = nil
 
 OptionParser.parse do |parser|
   parser.banner = "Usage: presentation [arguments]"
   parser.on("-d DEST", "--destination=DEST", "Distination directory for zola markdown files") do |dest| 
-    destination = dest 
+    destination = dest
+  end
+  parser.on("-m MATERIALS", "--materials=MATERIALS", "Distination directory for presentation materials") do |m| 
+    materials = m
   end
   parser.on("-h", "--help", "Show this help") do
     puts parser
@@ -275,10 +279,13 @@ OptionParser.parse do |parser|
 end
 
 if destination.nil?
-  raise "Distination must be give"
+  raise "Markdown distination must be given."
+end
+if materials.nil?
+  raise "Materials directory must be given."
 end
 
 url = "https://novalug.org/presentations.html"
 presentations = parse_html_table(url)
 
-write_presentations(destination.not_nil!, presentations)
+write_presentations(destination.not_nil!, materials.not_nil!, presentations)
