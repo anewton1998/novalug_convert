@@ -110,7 +110,7 @@ def to_md_list(node : Lexbor::Node) : Array(String)
       list.concat(child_text)
     elsif child.is_tag_a?
       presenter = child.inner_text
-      link = child["href"]
+      link = child["href"].gsub("./pics", "@/pics")
       list << "[#{presenter}](#{link})"
     end
   end
@@ -206,6 +206,7 @@ def write_presentations(dest : String, presentations : Array(Presentation))
       md_file.puts
     end
     md_file.puts "Video: #{preso.video}" if preso.video != nil
+    md_file.close()
   end
 end
 
@@ -247,7 +248,7 @@ def download_file(dest : Path, url : String)
   filename = Path[dest, url.split('/').last]
   response = HTTP::Client.get(url)
   puts "Downloading #{url} to #{filename}"
-  HTTP::Client.get("http://www.example.com") do |response|
+  HTTP::Client.get(url) do |response|
     response.status_code  # => 200
     File.open(filename, "wb") do |file|
       IO.copy(response.body_io, file)
@@ -281,30 +282,3 @@ url = "https://novalug.org/presentations.html"
 presentations = parse_html_table(url)
 
 write_presentations(destination.not_nil!, presentations)
-
-# if presentations
-#   puts "Successfully parsed table data:"
-#   presentations.each do |preso|
-#     puts "+++"
-#     puts "Date: #{preso.date}"
-#     puts "Title: #{preso.title}"
-#     puts "Presenters: #{preso.presenters.join(", ")}" if !preso.presenters.empty?
-#     puts "Summary: #{preso.summary}" if preso.summary != nil
-#     if !preso.other_links.empty?
-#       puts "Other Links:"
-#       preso.other_links.each do |link|
-#         puts "* #{link}"
-#       end
-#     end
-#     if !preso.materials.empty?
-#       puts "Materials:"
-#       preso.materials.each do |link|
-#         puts "* #{link}"
-#       end
-#     end
-#     puts "Video: #{preso.video}" if preso.video != nil
-#   end
-# else
-#   puts "Error: Failed to parse table."
-# end
-
